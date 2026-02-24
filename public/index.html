@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Folder Tokenizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Folder Tokenizer</h1>
+            <p class="subtitle">Analyze token counts for all documents in a folder using HuggingFace tokenizers</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <h2>⚙️ Configuration</h2>
+                
+                <div class="config-section">
+                    <h3>Tokenizer Model</h3>
+                    <select id="modelSelect">
+                        <optgroup label="OpenAI-style">
+                            <option value="gpt2">GPT-2 (OpenAI)</option>
+                            <option value="Xenova/gpt-4o">GPT-4o (OpenAI)</option>
+                            <option value="Xenova/claude-tokenizer">Claude (Anthropic)</option>
+                        </optgroup>
+                        <optgroup label="Meta LLaMA">
+                            <option value="meta-llama/Llama-2-7b-hf">LLaMA 2 (Meta)</option>
+                            <option value="meta-llama/Meta-Llama-3-8B">LLaMA 3 (Meta)</option>
+                            <option value="meta-llama/Llama-3.2-1B">LLaMA 3.2 (Meta)</option>
+                        </optgroup>
+                        <optgroup label="Mistral">
+                            <option value="mistralai/Mistral-7B-v0.1">Mistral 7B</option>
+                            <option value="mistralai/Mixtral-8x7B-v0.1">Mixtral 8x7B</option>
+                        </optgroup>
+                        <optgroup label="Google (Gemini/Gemma)">
+                            <option value="google/gemma-2-2b">Gemma 2 2B</option>
+                            <option value="google/gemma-2-9b">Gemma 2 9B</option>
+                            <option value="google/gemma-2-27b">Gemma 2 27B</option>
+                        </optgroup>
+                        <optgroup label="Other Models">
+                            <option value="Qwen/Qwen2.5-7B">Qwen 2.5 (Alibaba)</option>
+                            <option value="microsoft/phi-2">Phi-2 (Microsoft)</option>
+                            <option value="deepseek-ai/DeepSeek-V2-Lite">DeepSeek V2</option>
+                            <option value="tiiuae/falcon-7b">Falcon 7B (TII)</option>
+                        </optgroup>
+                        <optgroup label="Encoder Models">
+                            <option value="bert-base-uncased">BERT Base</option>
+                            <option value="sentence-transformers/all-MiniLM-L6-v2">MiniLM (Embeddings)</option>
+                        </optgroup>
+                    </select>
+                    
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="useCustomModel">
+                        Use custom model
+                    </label>
+                    
+                    <input type="text" id="customModel" placeholder="e.g., facebook/opt-1.3b" disabled>
+                </div>
+
+                <hr>
+
+                <div class="help-section">
+                    <h3>📖 Supported Files</h3>
+                    <ul>
+                        <li><strong>Text:</strong> .txt, .md, .json, .csv, .xml, .yaml</li>
+                        <li><strong>Code:</strong> .py, .js, .ts, .java, .go, .rs, etc.</li>
+                        <li><strong>Documents:</strong> .pdf, .docx</li>
+                        <li><strong>Images:</strong> .png, .jpg (OCR)</li>
+                        <li><strong>Archives:</strong> .zip (auto-extracted)</li>
+                    </ul>
+                </div>
+            </aside>
+
+            <main class="main-area">
+                <div class="input-section">
+                    <div class="folder-input-group">
+                        <input type="text" id="folderPath" placeholder="/path/to/your/folder">
+                        <button id="browseBtn" class="secondary-btn">📁 Browse</button>
+                        <button id="analyzeBtn" class="primary-btn">🔍 Analyze</button>
+                    </div>
+                </div>
+
+                <div id="loadingSection" class="loading-section" style="display: none;">
+                    <div class="spinner"></div>
+                    <p id="loadingText">Analyzing folder...</p>
+                </div>
+
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <p id="errorText"></p>
+                </div>
+
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="success-message">✅ Analysis complete!</div>
+
+                    <h2>📈 Summary</h2>
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Tokens</div>
+                            <div class="metric-value" id="totalTokens">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Total Characters</div>
+                            <div class="metric-value" id="totalChars">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Files Processed</div>
+                            <div class="metric-value" id="successfulFiles">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Failed Files</div>
+                            <div class="metric-value" id="failedFiles">0</div>
+                        </div>
+                    </div>
+
+                    <div id="byTypeSection" style="display: none;">
+                        <h2>📊 Breakdown by File Type</h2>
+                        <div id="typeBreakdown"></div>
+                    </div>
+
+                    <h2>📋 Detailed Results</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="all">All Files</button>
+                        <button class="tab-btn" data-tab="failed">Failed Files</button>
+                        <button class="tab-btn" data-tab="top">Top Files by Tokens</button>
+                    </div>
+                    <div class="tab-content">
+                        <div id="allFilesTab" class="tab-panel active">
+                            <table id="allFilesTable">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Type</th>
+                                        <th>Tokens</th>
+                                        <th>Characters</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div id="failedFilesTab" class="tab-panel">
+                            <table id="failedFilesTable">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Type</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div id="topFilesTab" class="tab-panel">
+                            <table id="topFilesTable">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Type</th>
+                                        <th>Tokens</th>
+                                        <th>Characters</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
