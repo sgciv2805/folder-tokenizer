@@ -22,7 +22,7 @@ Analyze token counts for all documents in a folder using HuggingFace tokenizers.
 
 ```bash
 # Clone the repository
-git clone https://github.com/sajalgarg/folder-tokenizer
+git clone https://github.com/sgciv2805/folder-tokenizer
 cd folder-tokenizer
 
 # Create virtual environment
