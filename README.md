@@ -18,6 +18,20 @@ Analyze token counts for all documents in a folder. Supports nested folders, zip
 - **Images** (OCR): `.png`, `.jpg`, `.jpeg`, `.tiff`, `.bmp`
 - **Archives**: `.zip` (automatically extracted and processed)
 
+## Tokenizer Accuracy
+
+Different LLMs use different tokenization mechanisms. Token counts are model-specific:
+
+| Model | Accuracy | Notes |
+|---|---|---|
+| **LLaMA 2/3, Mistral, Gemma** | Accurate | Official tokenizer repos from Meta, Mistral, Google |
+| **GPT-4o** | Close | Community HuggingFace port of OpenAI's tiktoken vocabulary |
+| **Claude** | Approximate | Anthropic hasn't published their tokenizer; counts are estimated |
+
+**Important notes:**
+- LLaMA and Gemma models require a HuggingFace access token (gated models)
+- GPT-3.5 is not in the supported list; use GPT-4o for OpenAI model counts
+
 ## Installation
 
 ```bash
@@ -53,17 +67,62 @@ sudo apt-get install tesseract-ocr
 
 ## Usage
 
-### Web UI (Streamlit)
+### Web UI
 
+**Streamlit** (cross-platform):
 ```bash
 streamlit run src/folder_tokenizer/app.py
 ```
 
+**Node.js** (macOS, includes native folder picker):
+```bash
+node server.js  # opens http://localhost:3000
+```
+
 ### Command Line
 
+Basic usage:
 ```bash
 folder-tokenizer /path/to/folder --model gpt2
 ```
+
+Common options:
+```bash
+# Show top 10 files by token count
+folder-tokenizer /path/to/folder --verbose
+
+# Quiet mode: output only the integer token count (useful for scripts)
+folder-tokenizer /path/to/folder -q
+
+# Export results as JSON or CSV
+folder-tokenizer /path/to/folder --output results.json
+folder-tokenizer /path/to/folder --csv results.csv
+
+# Example: pipe token count to a variable
+TOKEN_COUNT=$(folder-tokenizer /path/to/folder -q)
+echo "Total tokens: $TOKEN_COUNT"
+```
+
+### Python API
+
+Use folder-tokenizer as a library:
+```python
+from folder_tokenizer import FolderTokenizer
+
+tokenizer = FolderTokenizer(model_name="gpt2")
+result = tokenizer.process_folder("/path/to/folder")
+
+print(f"Total tokens: {result.total_tokens}")
+print(f"Total characters: {result.total_chars}")
+print(f"Files processed: {len(result.files)}")
+```
+
+### When You're Over the Context Window
+
+If a corpus is too large for your context window, use `--verbose` to identify the heaviest files, then:
+- Exclude large generated files: `node_modules/`, `dist/`, `.git/`
+- Exclude lock files: `*.lock`, `yarn.lock`, `package-lock.json`
+- Use `--csv` to export results and manually select the most relevant files in a spreadsheet
 
 ## License
 
