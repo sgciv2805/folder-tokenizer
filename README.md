@@ -1,6 +1,6 @@
 # Folder Tokenizer
 
-Analyze token counts for all documents in a folder using HuggingFace tokenizers. Supports nested folders, zip files, and various document types.
+Analyze token counts for all documents in a folder. Supports nested folders, zip files, and various document types.
 
 ## Features
 
